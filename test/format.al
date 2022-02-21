@@ -1,0 +1,22 @@
+!> resource relative to the global library dirrectory
+resource `std/io.al`;
+
+!> resource to local library
+resource fiz.al;
+
+!> this is a test comment
+!*
+    MULTI LINE COMMENT
+*!
+
+!> function definition, can return any type
+func add(int32 a, int32 b): {
+    return (a+b);
+}
+
+!> entry point, returns int32
+func entry() -> int32: {
+    int32 status = 0;
+    str stringInit="This is a string :)";
+    return(status);
+}
