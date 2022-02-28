@@ -40,9 +40,9 @@ def status(msg: str):
 if(len(sys.argv) > 1 and sys.argv[1] == 'clean'):
     status("cleaning")
     if(sys.platform == 'win32'):
-        command(f'del {BUILD_DIR}/*.o')
+        command(f'del "{BUILD_DIR}/*.o"')
     else:
-        command(f'rm {BUILD_DIR}/*.o')
+        command(f'rm "{BUILD_DIR}/*.o"')
         
     exit()
 

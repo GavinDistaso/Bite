@@ -9,7 +9,7 @@
 #include <cli/cli-parser.h>
 #include <cli/cli-logger.h>
 
-#include <builder/bld-lexer.h>
+#include <builder/bld-parser.h>
 
 #include <stdbool.h>
 
@@ -44,11 +44,22 @@ int main(int argc, char** argv){
     
     /* ===== Tokenize File ===== */
 
-    LEXER_CTX lexer;
-    if(!BLD_readSource(&lexer, inputFile))
+    PARSER_CTX parser;
+    if(!BLD_readSource(&parser, inputFile))
         CLI_logStatus(STATUS_FATAL, "input file not found ['%s']", inputFile);
 
-    BLD_freeLexer(&lexer);
+    BLD_tokenize(&parser);
+
+    BLD_prune(&parser);
+
+    for(int i = 0; i < parser.tokenCount * 2; i+=2){
+        int start   = parser.tokens[i],
+            end     = parser.tokens[i+1],
+            len     = end-start + 1;
+        CLI_logStatus(STATUS_LOG, "%.*s", len, parser.filedata + start);
+    }
+
+    BLD_freeParser(&parser);
 }
 
 static inline void retriveBuildInfo(
