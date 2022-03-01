@@ -8,8 +8,10 @@
 #include <string.h>
 
 /* ===== Format Defines ===== */
-const char* WHITESPACE      = " \t\r\n\v\f",
 
+// these are delims for tokens
+const char  *TOKEN_BREAK    = " \n\t\v\f;",
+            *WHITESPACE     = " \n\t\v\f",
 *OPPERATORS[] = {
     "+","-","/","*","%","//","**", "--", "++"       // Arithmetic
     "==", "!=", ">=", "<=", ">", "<",               // Relational
@@ -18,11 +20,14 @@ const char* WHITESPACE      = " \t\r\n\v\f",
 };
 const int OPP_LEN = sizeof(OPPERATORS) / sizeof(char*);
 
-const char* STRING          = "\"\"", // [start][end]
-          * END_STATEMENTS  = ";",
+const char  STRING          = '"',
           * LINE_COMMENT    = "!>",
           * BLOCK_START     = "!*",
           * BLOCK_END       = "*!";
+
+// these are delims that are also put into there own token
+// e.g. (';' is delim) hi;low -> ["hi", ";", "low"]
+const char* SOLITARY        = "\n";
 /* ===== Function Definitions ===== */
 
 void BLD_freeParser(PARSER_CTX* ctx){
@@ -50,100 +55,45 @@ bool BLD_readSource(PARSER_CTX* ctx, const char* filepath){
     return true;
 }
 
-/* Tokenizing & related */
-
+// internal function
 static bool charInString(char c, const char* s);
-static bool stringInArray(const char* s, const char** arr, const int arrLen);
-static void appendToken(int* tokens, int* elemCount, int* start, int end);
-static bool skip(PARSER_CTX* ctx, int* curIndex, const char* start, const char* end);
+static void appendToken(unsigned int* tokens, int* tokCount, int start, int end);
 
 void BLD_tokenize(PARSER_CTX* ctx){
-    int elemCount = 0;
-    int* tokens = malloc(0);
+    ctx->tokens = malloc(0);
+    int tokenStart = ctx->tokenCount = 0;
 
-    // split into segments of spaces and new lines 
-    // newlines put a \n char in a seperate token
-    int start = 0;
     for(int i = 0; i < ctx->fileLength; i++){
         char c = ctx->filedata[i];
-        if(c == '\n'){
-            appendToken(tokens, &elemCount, &start, i-1);
-            appendToken(tokens, &elemCount, &start, i);
-        }else if(charInString(c, WHITESPACE)){
-            appendToken(tokens, &elemCount, &start, i-1);
-            for(int j = i; j < ctx->fileLength; j++)
-                if(charInString(ctx->filedata[i], WHITESPACE))
-                    start = ++i;
+        if(c == STRING){
+            appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, i-1);
+            tokenStart = i;
+            while(ctx->filedata[++i] != STRING);
+            appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, i);
+            tokenStart = i+1;
+        } else if(charInString(c, TOKEN_BREAK) || charInString(c, SOLITARY)){
+            appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, i-1);
+            if(charInString(c, SOLITARY))
+                appendToken(ctx->tokens, &ctx->tokenCount, i, i);
+            tokenStart = i+1;
         }
     }
-
-    ctx->tokenCount = elemCount >> 1;
-    ctx->tokens = tokens;
 }
 
 void BLD_prune(PARSER_CTX* ctx){
-    int elemCount = 0;
-    int* tokens = malloc(0);
-
-    for(int i = 0; i < ctx->tokenCount * 2; i+=2){
-        int start   = ctx->tokens[i],
-            end     = ctx->tokens[i+1],
-            len     = end-start + 1;
-        
-        bool act = 
-            skip(ctx, &i, LINE_COMMENT, "\n") &
-            skip(ctx, &i, BLOCK_START, BLOCK_END);
-        
-        if(act)
-            appendToken(tokens, &elemCount, &start, end);
-        
-    }
-
-    // replace old tokens
-    free(ctx->tokens);
-
-    ctx->tokenCount = elemCount >> 1;
-    ctx->tokens = tokens;
+   
 }
 
-/* ===== internal functions ===== */
+// internal function definitions
 
 static bool charInString(char c, const char* s){
     for(int i = 0; i < strlen(s); i++)
-        if(s[i] == c) return true;
+        if(c == s[i]) return true;
     return false;
 }
 
-static bool stringInArray(const char* s, const char** arr, const int arrLen){
-    for(int i = 0; i < arrLen; i++)
-        if(!strcmp(s, arr[i])) return true;
-    return false;
-}
-
-static void appendToken(int* tokens, int* elemCount, int* start, int end){
-    tokens = realloc(tokens, (*elemCount+=2) * sizeof(int));
-    tokens[*elemCount-2] = *start;
-    tokens[*elemCount-1] = end;
-    *start = end+1;
-}
-
-static void skipUntil(PARSER_CTX* ctx, int* startIndex, const char* end){
-    for(int j = *startIndex; j < ctx->tokenCount * 2; j+=2){
-        if(memcmp(ctx->filedata + ctx->tokens[j], end, strlen(end)) == 0){
-            *startIndex = j;
-            break;
-        }
-    }
-}
-
-static bool memStrCmp(const char* memStart, const char* s){
-    return !memcmp(memStart, s, strlen(s));
-}
-
-static bool skip(PARSER_CTX* ctx, int* curIndex, const char* start, const char* end){
-    if(memStrCmp(ctx->filedata + ctx->tokens[*curIndex], start))
-        skipUntil(ctx, curIndex, end);
-    else
-        return 1;
-    return 0;
+static void appendToken(unsigned int* tokens, int* tokCount, int start, int end){
+    tokens = realloc(tokens, (++*tokCount) * 2 * sizeof(int));
+    tokens[(*tokCount*2) - 2] = start;
+    tokens[(*tokCount*2) - 1] = end;
 }

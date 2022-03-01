@@ -50,7 +50,7 @@ int main(int argc, char** argv){
 
     BLD_tokenize(&parser);
 
-    BLD_prune(&parser);
+    //BLD_prune(&parser);
 
     for(int i = 0; i < parser.tokenCount * 2; i+=2){
         int start   = parser.tokens[i],
