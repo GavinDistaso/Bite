@@ -58,6 +58,7 @@ bool BLD_readSource(PARSER_CTX* ctx, const char* filepath){
 // internal function
 static bool charInString(char c, const char* s);
 static void appendToken(unsigned int* tokens, int* tokCount, int start, int end);
+static void skip(PARSER_CTX* ctx, int* index, int* tokenStart, const char* whitelist);
 
 void BLD_tokenize(PARSER_CTX* ctx){
     ctx->tokens = malloc(0);
@@ -70,14 +71,15 @@ void BLD_tokenize(PARSER_CTX* ctx){
             tokenStart = i;
             while(ctx->filedata[++i] != STRING);
             appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, i);
-            tokenStart = i+1;
-        } else if(charInString(c, TOKEN_BREAK) || charInString(c, SOLITARY)){
+            skip(ctx, &i, &tokenStart, TOKEN_BREAK);
+        } else if(charInString(c, TOKEN_BREAK)){
             appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, i-1);
             if(charInString(c, SOLITARY))
                 appendToken(ctx->tokens, &ctx->tokenCount, i, i);
-            tokenStart = i+1;
+            skip(ctx, &i, &tokenStart, TOKEN_BREAK);
         }
     }
+    appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, ctx->fileLength-1);
 }
 
 void BLD_prune(PARSER_CTX* ctx){
@@ -95,5 +97,10 @@ static bool charInString(char c, const char* s){
 static void appendToken(unsigned int* tokens, int* tokCount, int start, int end){
     tokens = realloc(tokens, (++*tokCount) * 2 * sizeof(int));
     tokens[(*tokCount*2) - 2] = start;
-    tokens[(*tokCount*2) - 1] = end;
+    tokens[(*tokCount*2) - 1] = end-start+1;
+}
+
+static void skip(PARSER_CTX* ctx, int* index, int* tokenStart, const char* whitelist){
+    while(charInString(ctx->filedata[++(*index)], whitelist));
+    *tokenStart = (*index)--;
 }

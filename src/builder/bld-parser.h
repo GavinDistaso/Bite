@@ -7,7 +7,7 @@
 typedef struct PARSER_CTX{
     char* filedata;
     unsigned int fileLength, tokenCount;
-    unsigned int* tokens; // in pairs: [start][end] 
+    unsigned int* tokens; // in pairs: [start][len] 
 } PARSER_CTX;
 
 void BLD_freeParser(PARSER_CTX* ctx);

@@ -54,8 +54,7 @@ int main(int argc, char** argv){
 
     for(int i = 0; i < parser.tokenCount * 2; i+=2){
         int start   = parser.tokens[i],
-            end     = parser.tokens[i+1],
-            len     = end-start + 1;
+            len     = parser.tokens[i+1];
         CLI_logStatus(STATUS_LOG, "%.*s", len, parser.filedata + start);
     }
 
