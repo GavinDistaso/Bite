@@ -10,15 +10,17 @@
 /* ===== Format Defines ===== */
 
 // these are delims for tokens
-const char  *TOKEN_BREAK    = " \n\t\v\f;",
-            *WHITESPACE     = " \n\t\v\f",
-*OPPERATORS[] = {
+const char  *TOKEN_BREAK    = " \n\t\v\f;,()",
+            *NO_INFO_SKIP   = " \n\t\v\f;",
+*OPERATORS[] = {
     "+","-","/","*","%","//","**", "--", "++"       // Arithmetic
     "==", "!=", ">=", "<=", ">", "<",               // Relational
     "&&", "||", "!",                                // Logical 
-    "&", "|", "~", "<<", ">>", "^"                  // binary
+    "&", "|", "~", "<<", ">>", "^",                 // binary
+    "=", "+=", "-=", "/=", "*=", "%=",              // Assignment
+    "&=", "|=", "!=", "^="                          // Bitwise Assigment
 };
-const int OPP_LEN = sizeof(OPPERATORS) / sizeof(char*);
+const int OP_LEN = sizeof(OPERATORS) / sizeof(char*);
 
 const char  STRING          = '"',
           * LINE_COMMENT    = "!>",
@@ -27,7 +29,7 @@ const char  STRING          = '"',
 
 // these are delims that are also put into there own token
 // e.g. (';' is delim) hi;low -> ["hi", ";", "low"]
-const char* SOLITARY        = "\n";
+const char* SOLITARY        = "\n,()";
 /* ===== Function Definitions ===== */
 
 void BLD_freeParser(PARSER_CTX* ctx){
@@ -60,6 +62,8 @@ static bool charInString(char c, const char* s);
 static void appendToken(unsigned int* tokens, int* tokCount, int start, int end);
 static void skip(PARSER_CTX* ctx, int* index, int* tokenStart, const char* whitelist);
 
+static bool memStrCmp(void* mem, int memLen, const char* s);
+
 void BLD_tokenize(PARSER_CTX* ctx){
     ctx->tokens = malloc(0);
     int tokenStart = ctx->tokenCount = 0;
@@ -71,19 +75,52 @@ void BLD_tokenize(PARSER_CTX* ctx){
             tokenStart = i;
             while(ctx->filedata[++i] != STRING);
             appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, i);
-            skip(ctx, &i, &tokenStart, TOKEN_BREAK);
+            skip(ctx, &i, &tokenStart, NO_INFO_SKIP);
         } else if(charInString(c, TOKEN_BREAK)){
             appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, i-1);
             if(charInString(c, SOLITARY))
                 appendToken(ctx->tokens, &ctx->tokenCount, i, i);
-            skip(ctx, &i, &tokenStart, TOKEN_BREAK);
+            skip(ctx, &i, &tokenStart, NO_INFO_SKIP);
         }
     }
     appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, ctx->fileLength-1);
 }
 
 void BLD_prune(PARSER_CTX* ctx){
-   
+    unsigned int* newTokens = malloc(0);
+    int newTokenCount = 0;
+
+    // 0 = not in comment, 1 = in line, 2 = in block
+    int inComment = 0; 
+
+    for(int i = 0; i < ctx->tokenCount * 2; i+=2){
+        int start   = ctx->tokens[i],
+            len     = ctx->tokens[i+1];
+        
+        /* comments */
+        if(!inComment){
+            inComment = 
+                memStrCmp(ctx->filedata + start, len, LINE_COMMENT) |
+                memStrCmp(ctx->filedata + start, len, BLOCK_START) * 2;
+        }
+        if(inComment){
+            if(
+                (inComment == 1 && memStrCmp(ctx->filedata + start, len, "\n")) ||
+                (inComment == 2 && memStrCmp(ctx->filedata + start, len, BLOCK_END))
+            )   inComment = 0;
+            continue;
+        }
+
+        /* newlines */
+        if(memStrCmp(ctx->filedata + start, len, "\n")) continue;
+
+        appendToken(newTokens, &newTokenCount, start, start+len-1);
+    }
+
+    // update current tokens
+    free(ctx->tokens);
+    ctx->tokens = newTokens;
+    ctx->tokenCount = newTokenCount;
 }
 
 // internal function definitions
@@ -95,6 +132,7 @@ static bool charInString(char c, const char* s){
 }
 
 static void appendToken(unsigned int* tokens, int* tokCount, int start, int end){
+    if(end < start) return;
     tokens = realloc(tokens, (++*tokCount) * 2 * sizeof(int));
     tokens[(*tokCount*2) - 2] = start;
     tokens[(*tokCount*2) - 1] = end-start+1;
@@ -103,4 +141,11 @@ static void appendToken(unsigned int* tokens, int* tokCount, int start, int end)
 static void skip(PARSER_CTX* ctx, int* index, int* tokenStart, const char* whitelist){
     while(charInString(ctx->filedata[++(*index)], whitelist));
     *tokenStart = (*index)--;
+}
+
+
+static bool memStrCmp(void* mem, int memLen, const char* s){
+    int sLen    = strlen(s);
+    if(sLen != memLen) return false;
+    return !memcmp(mem, s, sLen);
 }

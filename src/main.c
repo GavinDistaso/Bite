@@ -28,7 +28,6 @@ const int TAGS_LEN = sizeof(TAGS) / sizeof(char*);
 
 static inline void retriveBuildInfo(CLI_CTX*,SETTINGS_CTX*,char**,char**);
 
-//TODO: refactor all this crap that is below: idk, use macros or smth
 int main(int argc, char** argv){
     CLI_CTX cli = {argv, argc};
     SETTINGS_CTX settings = SETTINGS_CTX();
@@ -50,7 +49,7 @@ int main(int argc, char** argv){
 
     BLD_tokenize(&parser);
 
-    //BLD_prune(&parser);
+    BLD_prune(&parser);
 
     for(int i = 0; i < parser.tokenCount * 2; i+=2){
         int start   = parser.tokens[i],
