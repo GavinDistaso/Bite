@@ -1,9 +1,9 @@
 # root file, branches to all modules
 cmake_minimum_required(VERSION 3.10)
 
-SET(EXE cal)
+SET(EXE blc)
 
-project(ALang C)
+project(Bite C)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "../bin")
 

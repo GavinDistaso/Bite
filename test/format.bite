@@ -1,8 +1,8 @@
 !> resource relative to the global library dirrectory
-resource `std/io.a`;
+resource `std/io.bite`;
 
 !> resource to local library
-resource fiz.a;
+resource fiz.bite;
 
 !> this is a test comment
 !*
