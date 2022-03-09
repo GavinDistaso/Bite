@@ -10,6 +10,7 @@ typedef enum STATUS_TYPE{
     STATUS_ERROR = 31 + 0xff, // + 0xff makes it lighter color
     STATUS_FATAL = 31, //! will quit program
     STATUS_CMD = 34,
+    STATUS_SUCCESS = 32,
 } STATUS_TYPE;
 
 // /* Internal Functions */

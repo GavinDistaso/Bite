@@ -65,7 +65,7 @@ so far I'm using the following as a reference to build the compiler, this is als
 resource `std/io.bite`;
 
 !> resource to local library
-resource fiz.bite;
+resource "fiz.bite";
 
 !> this is a test comment
 !*

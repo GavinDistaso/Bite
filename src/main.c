@@ -60,6 +60,8 @@ int main(int argc, char** argv){
     }
 
     PRS_freeParser(&parser);
+
+    CLI_logStatus(STATUS_SUCCESS, "Operation Completed!");
 }
 
 static inline void retriveBuildInfo(

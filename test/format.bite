@@ -2,7 +2,7 @@
 resource `std/io.bite`;
 
 !> resource to local library
-resource fiz.bite;
+resource "fiz.bite";
 
 !> this is a test comment
 !*

@@ -37,6 +37,7 @@ void I_CLI_printHeader(STATUS_TYPE s){
         case STATUS_ERROR: NP("[ERROR]")
         case STATUS_FATAL: NP("[FATAL]")
         case STATUS_CMD: NP("[CMD]")
+        case STATUS_SUCCESS: NP("[SUCCESS]")
     }
     fputs(" ", stdout);
     changeOutputColor(0, 0);
