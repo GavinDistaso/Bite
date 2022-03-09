@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2022 Gavin Distaso
 // SPDX-License-Identifier: MIT License
 
-#include "cli-logger.h"
+#include "logger.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -52,4 +52,8 @@ void I_CLI_vprintf(const char* format, ...){
 
 void I_CLI_executeSpecial(STATUS_TYPE s){
     if(s == STATUS_FATAL) exit(-1);
+}
+
+void CLI_rawPrint(const char* msg){
+    fputs(msg, stdout);
 }

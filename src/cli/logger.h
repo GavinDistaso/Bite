@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2022 Gavin Distaso
 // SPDX-License-Identifier: MIT License
 
-#ifndef CLI_CLI_LOGGER_H
-#define CLI_CLI_LOGGER_H
+#ifndef CLI_LOGGER_H
+#define CLI_LOGGER_H
 
 typedef enum STATUS_TYPE{
     STATUS_LOG = 37, 
@@ -24,4 +24,6 @@ void I_CLI_executeSpecial(STATUS_TYPE s);
     I_CLI_executeSpecial(s);                        \
 }
 
-#endif // CLI_CLI_LOGGER_H
+void CLI_rawPrint(const char* msg);
+
+#endif // CLI_LOGGER_H

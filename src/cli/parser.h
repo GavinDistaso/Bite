@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2022 Gavin Distaso
 // SPDX-License-Identifier: MIT License
 
-#ifndef CLI_CLI_PARSER_H
-#define CLI_CLI_PARSER_H
+#ifndef CLI_PARSER_H
+#define CLI_PARSER_H
 
 typedef struct CLI_CTX{
     char** argv;
@@ -19,4 +19,4 @@ int CLI_findTag(CLI_CTX* ctx, const char* tag);
 // return: index of unknown tag, -1 if no unknowns are found
 int CLI_findUnknownTags(CLI_CTX* ctx, const char** tags, const int taglen);
 
-#endif // CLI_CLI_PARSER_H
+#endif // CLI_PARSER_H

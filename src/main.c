@@ -6,10 +6,10 @@
 
 #include <main.h>
 
-#include <cli/cli-parser.h>
-#include <cli/cli-logger.h>
+#include <cli/parser.h>
+#include <cli/logger.h>
 
-#include <builder/bld-parser.h>
+#include <parser/parser.h>
 
 #include <stdbool.h>
 
@@ -32,6 +32,8 @@ int main(int argc, char** argv){
     CLI_CTX cli = {argv, argc};
     SETTINGS_CTX settings = SETTINGS_CTX();
 
+    CLI_rawPrint("===== Bite Lang Compiler =====\n");
+
     // check for unknown tags
     int tagI;
     if((tagI = CLI_findUnknownTags(&cli, TAGS, TAGS_LEN)) != -1)
@@ -44,20 +46,20 @@ int main(int argc, char** argv){
     /* ===== Tokenize File ===== */
 
     PARSER_CTX parser;
-    if(!BLD_readSource(&parser, inputFile))
+    if(!PRS_readSource(&parser, inputFile))
         CLI_logStatus(STATUS_FATAL, "input file not found ['%s']", inputFile);
 
-    BLD_tokenize(&parser);
+    PRS_tokenize(&parser);
 
-    BLD_prune(&parser);
+    PRS_prune(&parser);
 
     for(int i = 0; i < parser.tokenCount * 2; i+=2){
         int start   = parser.tokens[i],
             len     = parser.tokens[i+1];
-        CLI_logStatus(STATUS_LOG, "%.*s", len, parser.filedata + start);
+        CLI_logStatus(STATUS_LOG, "|%.*s|", len, parser.filedata + start);
     }
 
-    BLD_freeParser(&parser);
+    PRS_freeParser(&parser);
 }
 
 static inline void retriveBuildInfo(

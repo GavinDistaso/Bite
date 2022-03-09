@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2022 Gavin Distaso
 // SPDX-License-Identifier: MIT License
 
-#include "cli-parser.h"
+#include "parser.h"
 
 #include <string.h>
 #include <stdlib.h>

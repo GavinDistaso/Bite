@@ -9,6 +9,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "../bin")
 
 include(src/CMakeLists.txt)
 
-include(src/builder/CMakeLists.txt)
+include(src/parser/CMakeLists.txt)
 include(src/cli/CMakeLists.txt)
 
