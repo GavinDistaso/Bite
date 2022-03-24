@@ -19,7 +19,7 @@ const char  *TOKEN_BREAK    = " \n\t\v\f;,()",
     
     "->", // declare return type
 
-    /* == opperators == */
+    /* == operators == */
     // -- multi char
     "//","**", "--", "++",
     "==", "!=", ">=", "<=",
@@ -78,7 +78,7 @@ static void skip(PARSER_CTX* ctx, int* index, int* tokenStart, const char* white
 static bool memStrCmp(void* mem, int memLen, const char* s);
 
 void PRS_tokenize(PARSER_CTX* ctx){
-    ctx->tokens = malloc(0);
+    ctx->tokens = NULL;
     int tokenStart = ctx->tokenCount = 0;
 
     for(int i = 0; i < ctx->fileLength; i++){

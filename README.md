@@ -12,6 +12,9 @@
 * [Compiling the Project (w/ CMake)](#compiling-the-project-w-cmake)
 * [Code Examples / Format](#code-examples--format)
 
+# Quick Access
+
+- ### [Read Docs Here](./docs/overview.md)
 
 # Goals
 These are my main design goals:
@@ -34,12 +37,12 @@ There are probably many, first check if it's already reported. If not make an [i
 If you want syntax highlighting for VSCode here's one from my [other repo](https://github.com/ProgrammingNerdGit/VSCode-Bite-Syntax). It probably could be better, but it works.
 
 # Standard
+
+### [Read Docs Here](./docs/overview.md)
+
 I'm an advocate for coding how you want, the only thing I ask is to be consistent and use either, `camelCase`, `PascalCase`, or `MACRO_CASE`. `snake_case` is also fine.
 
 And what I mean by "be consistent" is to use the same case for all functions, the same case for all variables (except constants if you are into that), etc. Functions and variables can be a different case, just all the functions and variables should be uniform in their own right.
-
-## __Good practices will be listed in the docs__
-but remember, DONT LET ANYONE TELL YOU HOW TO CODE, OR WHAT CODE IS 'GOOD' or 'BAD', those people are not welcome here (jk ofc).
 
 # Compiling the Project (w/ CMake)
 Compiling is super easy thanks to `CMake`, and trust me I didn't like it at first either, but after I gave it a fair shot I fell in love.
