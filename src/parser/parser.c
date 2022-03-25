@@ -71,8 +71,8 @@ bool PRS_readSource(PARSER_CTX* ctx, const char* filepath){
 
 // internal function
 static bool charInString(char c, const char* s);
-static void appendToken(unsigned int* tokens, int* tokCount, int start, int end);
-static void appendTokenLen(unsigned int* tokens, int* tokCount, int start, int len);
+static void appendToken(unsigned int** tokens, int* tokCount, int start, int end);
+static void appendTokenLen(unsigned int** tokens, int* tokCount, int start, int len);
 static void skip(PARSER_CTX* ctx, int* index, int* tokenStart, const char* whitelist);
 
 static bool memStrCmp(void* mem, int memLen, const char* s);
@@ -86,10 +86,10 @@ void PRS_tokenize(PARSER_CTX* ctx){
         if(charInString(c, STRING)){
             // loop until found same string mark, 
             // then add entire string to its own token
-            appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, i-1);
+            appendToken(&ctx->tokens, &ctx->tokenCount, tokenStart, i-1);
             tokenStart = i;
             while(ctx->filedata[++i] != c);
-            appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, i);
+            appendToken(&ctx->tokens, &ctx->tokenCount, tokenStart, i);
             skip(ctx, &i, &tokenStart, NO_INFO_SKIP);
         } else if(charInString(c, TOKEN_BREAK)){
             // loop through current token and split into sub-tokens
@@ -100,24 +100,24 @@ void PRS_tokenize(PARSER_CTX* ctx){
                 for(int w = 0; w < TOK_SIG_LEN; w++){
                     int sigLen = strlen(TOKEN_SIGNIFIERS[w]);
                     if(memStrCmp(ctx->filedata + j, sigLen, TOKEN_SIGNIFIERS[w])){
-                        appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, j-1);
-                        appendTokenLen(ctx->tokens, &ctx->tokenCount, j, sigLen);
+                        appendToken(&ctx->tokens, &ctx->tokenCount, tokenStart, j-1);
+                        appendTokenLen(&ctx->tokens, &ctx->tokenCount, j, sigLen);
                         tokenStart = (j += sigLen);
                         break;
                     }
                 }
             }
             // append remaining token
-            appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, i-1);
+            appendToken(&ctx->tokens, &ctx->tokenCount, tokenStart, i-1);
             skip(ctx, &i, &tokenStart, NO_INFO_SKIP);
         }
     }
     // append remaining crap
-    appendToken(ctx->tokens, &ctx->tokenCount, tokenStart, ctx->fileLength-1);
+    appendToken(&ctx->tokens, &ctx->tokenCount, tokenStart, ctx->fileLength-1);
 }
 
 void PRS_prune(PARSER_CTX* ctx){
-    unsigned int* newTokens = malloc(0);
+    unsigned int* newTokens = NULL;
     int newTokenCount = 0,
     //? NOTE: 0 = not in comment, 1 = in line, 2 = in block
     inComment = 0; 
@@ -126,6 +126,8 @@ void PRS_prune(PARSER_CTX* ctx){
         int start   = ctx->tokens[i],
             len     = ctx->tokens[i+1];
         
+        if(memStrCmp(ctx->filedata + start, len, "\r")) continue;
+
         /* remove comments */
         if(!inComment){
             inComment = 
@@ -144,7 +146,7 @@ void PRS_prune(PARSER_CTX* ctx){
         if(memStrCmp(ctx->filedata + start, len, "\n")) continue;
 
         // append leftover to new tokens
-        appendTokenLen(newTokens, &newTokenCount, start, len);
+        appendTokenLen(&newTokens, &newTokenCount, start, len);
     }
 
     // update current tokens
@@ -161,14 +163,14 @@ static bool charInString(char c, const char* s){
     return false;
 }
 
-static void appendTokenLen(unsigned int* tokens, int* tokCount, int start, int len){
+static void appendTokenLen(unsigned int** tokens, int* tokCount, int start, int len){
     if(len <= 0) return;
-    tokens = realloc(tokens, (++*tokCount) * 2 * sizeof(int));
-    tokens[(*tokCount*2) - 2] = start;
-    tokens[(*tokCount*2) - 1] = len;
+    *tokens = realloc(*tokens, (++*tokCount) * 2 * sizeof(int));
+    (*tokens)[(*tokCount*2) - 2] = start;
+    (*tokens)[(*tokCount*2) - 1] = len;
 }
 
-static void appendToken(unsigned int* tokens, int* tokCount, int start, int end){
+static void appendToken(unsigned int** tokens, int* tokCount, int start, int end){
     if(end < start) return;
     appendTokenLen(tokens, tokCount, start, end-start+1);
 }
