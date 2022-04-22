@@ -10,20 +10,25 @@
 #include <cli/logger.h>
 
 #include <parser/parser.h>
+#include <builder/builder.h>
 
 #include <stdbool.h>
+
+#include <stdio.h>
+#include <builder/assembler.h>
 
 /*
 * The command line arguments are as follows
 *                                   [Description]
 * --- FLAGS ---
-* `-I`                       -->    Sets to interperet mode
+* `-I`                       -->    Sets to interpret mode
+* `-dump`                    -->    dumps compiled opcode bin to file
 * --- KEYS ---
 * `-o [relative filepath]`   -->    specifies output filepath (required)
 * `-c [language]`            -->    Sets to convert mode for specific language
 * `-i` [filepath]            -->    specifies input filepath (required)
 */
-const char* TAGS[] = {"-I", "-o", "-c", "-i"};
+const char* TAGS[] = {"-I", "-o", "-c", "-i", "-dump"};
 const int TAGS_LEN = sizeof(TAGS) / sizeof(char*);
 
 static inline void retriveBuildInfo(CLI_CTX*,SETTINGS_CTX*,char**,char**);
@@ -53,12 +58,21 @@ int main(int argc, char** argv){
 
     PRS_prune(&parser);
 
-    for(int i = 0; i < parser.tokenCount * 2; i+=2){
-        int start   = parser.tokens[i],
-            len     = parser.tokens[i+1];
-        CLI_logStatus(STATUS_LOG, "|%.*s|", len, parser.filedata + start);
+    /* ===== Build File to BiteASM ===== */
+
+    BAB_CTX biteASM;
+    biteASM.opcodeLen = 0;
+    biteASM.opcodes = NULL;
+
+    BLD_buildTokens(&biteASM, &parser);
+
+    if(CLI_findTag(&cli, "-dump") != -1){
+        FILE* fp = fopen("out.bin", "wb+");
+        fwrite(biteASM.opcodes, 1, biteASM.opcodeLen, fp);
+        fclose(fp);
     }
 
+    /* clean */
     PRS_freeParser(&parser);
 
     CLI_logStatus(STATUS_SUCCESS, "Operation Completed!");

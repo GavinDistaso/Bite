@@ -11,4 +11,4 @@ include(src/CMakeLists.txt)
 
 include(src/parser/CMakeLists.txt)
 include(src/cli/CMakeLists.txt)
-
+include(src/builder/CMakeLists.txt)

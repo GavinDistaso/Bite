@@ -5,4 +5,5 @@ Bite compiles in this order:
 
 * Read & parse command line arguments
 * Read selected input file
-* [Parser](./parser.md)
+* [Parse](./parser.md)
+* [Compile]()

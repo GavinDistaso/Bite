@@ -4,4 +4,4 @@ This documentation will go over the fundamentals and standards of Bite, as well 
 ## Documents
 
 * [How the Bite Compiler Works](./compiler/overview.md)
-    * [Tokenizer](./compiler/tokenizer.md)
+    * [Parser](./compiler/parser.md)

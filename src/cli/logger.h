@@ -13,17 +13,17 @@ typedef enum STATUS_TYPE{
     STATUS_SUCCESS = 32,
 } STATUS_TYPE;
 
-// /* Internal Functions */
+/* Internal Functions */
 void I_CLI_printHeader(STATUS_TYPE s);
 void I_CLI_vprintf(const char* format, ...);
 void I_CLI_executeSpecial(STATUS_TYPE s);
 
-// /* Not Internal Function, Not Even A Function :) */
-#define CLI_logStatus(s, format, ...) {             \
+/* Not Internal Function, Not Even A Function :) */
+#define CLI_logStatus(s, format, ...) ({            \
     I_CLI_printHeader(s);                           \
     I_CLI_vprintf(format, ##__VA_ARGS__);           \
     I_CLI_executeSpecial(s);                        \
-}
+})
 
 void CLI_rawPrint(const char* msg);
 
