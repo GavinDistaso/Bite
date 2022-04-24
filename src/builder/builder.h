@@ -10,6 +10,7 @@ typedef struct BITE_ASM_BUILDER_CTX{
     unsigned char*  opcodes;
     unsigned int    opcodeLen, 
                     tokenIndex;
+    int openBracketCount; // counts how many closing brackets are needed
 } BAB_CTX;
 
 /* function defines */

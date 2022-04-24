@@ -114,6 +114,7 @@ static inline char assembleToken(PARSER_CTX* parser, int i){
 
     else if (tknStrCmp("CMP"))      return CMP;
     else if (tknStrCmp("FUNC"))     return FUNC;
+    else if (tknStrCmp("END"))      return END;
 
     else if (tknStrCmp("JME"))      return JME;
     else if (tknStrCmp("JML"))      return JML;

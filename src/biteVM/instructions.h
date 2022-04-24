@@ -32,7 +32,7 @@ typedef enum OPCODES{
 
     // ===== conditional & assignment ===== //
     MOV = 0x30, JMP, CALL, RET, CMP, 
-    FUNC,
+    FUNC, END,
 
     // - note: following based on CONDITION flag
     JME, JML, JMG, // jump if equal, less, or greater

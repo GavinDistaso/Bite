@@ -1,0 +1,3 @@
+func print(ptr string){
+    return string;
+}
