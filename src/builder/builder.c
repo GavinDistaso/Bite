@@ -16,6 +16,7 @@ const char* KEYWORDS[] = {
 
     "int8",     "int16",    "int32",    "int64",
     "uint8",    "uint16",   "uint32",   "uint64", "ptr",
+    "varToReg",
 
     "if", "else", "for", "while", "break", "continue"
 };
@@ -65,6 +66,8 @@ static _Bool executeKeyword(BAB_CTX* biteASM, PARSER_CTX* parser, int* i){
 
 static const char* getNextToken(PARSER_CTX* parser, int* i, int* len);
 static _Bool memStrCmp(const void* mem, int memLen, const char* s);
+static int parseStringLiteral(const char* s, int len, char** o);
+static void tokenCheck(PARSER_CTX* parser, int* i, const char* s);
 
 // convert keyword index to opcode
 static void convKwrdIndex2Op(BAB_CTX* biteASM, PARSER_CTX* parser, int* i, int keyword){
@@ -73,7 +76,7 @@ static void convKwrdIndex2Op(BAB_CTX* biteASM, PARSER_CTX* parser, int* i, int k
 
     // index is based on `KEYWORD` array, which is defined above
     switch(keyword){
-        case 0: {BLD_assemble(biteASM, "SOME ASM CODE");} break;   // resource
+        case 0: { /* //* ===== resource ===== */ } break;
         case 1: {   //* ===== func =====
             // funcs are stored in opcodes as so:
             // [\x5][func name][\x0][arg1 type][arg1 name][\x0][arg2 type]...[\x1]
@@ -89,10 +92,7 @@ static void convKwrdIndex2Op(BAB_CTX* biteASM, PARSER_CTX* parser, int* i, int k
             free(opcodes);
 
             // open perentheses check
-            int perenLen;
-            const char* peren = getNextToken(parser, i, &perenLen);
-            if(!memStrCmp(peren, perenLen, "("))
-                CLI_logStatus(STATUS_FATAL, "( expected");
+            tokenCheck(parser, i, "(");
 
             // add arguments to opcodes
             int argLen, argTypeLen;
@@ -108,7 +108,7 @@ static void convKwrdIndex2Op(BAB_CTX* biteASM, PARSER_CTX* parser, int* i, int k
                 else if(memStrCmp(argType, argTypeLen, "int16")) dataType += 1;
                 else if(memStrCmp(argType, argTypeLen, "int32")) dataType += 2;
                 else if(memStrCmp(argType, argTypeLen, "int64")) dataType += 3;
-                else if(memStrCmp(argType, argTypeLen, "ptr")) dataType += 5;
+                else if(memStrCmp(argType, argTypeLen, "ptr")) dataType += 8;
                 else CLI_logStatus(STATUS_FATAL, "unknown type '%.*s'", argTypeLen, argType);
                 
                 BLD_appendOpcodes(biteASM, &dataType, 1);
@@ -125,9 +125,7 @@ static void convKwrdIndex2Op(BAB_CTX* biteASM, PARSER_CTX* parser, int* i, int k
             biteASM->openBracketCount++;
 
             // open bracket check
-            //int bracketLen;
-            //const char* bracket = getNextToken(parser, i, &bracketLen);
-            //CLI_logStatus(STATUS_CMD, "%.*s", bracketLen, bracket);
+
             if(!memStrCmp(parser->filedata + parser->tokens[*i], parser->tokens[(*i)+1], "{"))
                 CLI_logStatus(STATUS_FATAL, "{ expected");
         } break;   
@@ -143,7 +141,15 @@ static void convKwrdIndex2Op(BAB_CTX* biteASM, PARSER_CTX* parser, int* i, int k
             BLD_appendOpcodes(biteASM, opcodes, varNameLen + 2);
             free(opcodes);
         } break;
-        case 3: {} break;   // asm
+        case 3: {   //* ===== asm =====
+            int asmStringLen;
+            char* asmString = (char*)getNextToken(parser, i, &asmStringLen);
+
+            char* asmCode;
+            int len = parseStringLiteral(asmString, asmStringLen, &asmCode);
+
+            BLD_assemble(biteASM, asmCode, len);
+        } break;
         case 4: {   //* ===== } =====
             if(biteASM->openBracketCount <= 0)
                 CLI_logStatus(STATUS_FATAL, "} unexpected");
@@ -163,12 +169,38 @@ static void convKwrdIndex2Op(BAB_CTX* biteASM, PARSER_CTX* parser, int* i, int k
         case 12: {} break;  // uint64
         case 13: {} break;  // ptr
 
-        case 14: {} break;  // if
-        case 15: {} break;  // else
-        case 16: {} break;  // for
-        case 17: {} break;  // while
-        case 18: {} break;  // break
-        case 19: {} break;  // continue
+        case 14: {  //* ===== var2reg =====
+            tokenCheck(parser, i, "(");
+
+            int varNameLen;
+            char* varName = (char*)getNextToken(parser, i, &varNameLen);
+
+            tokenCheck(parser, i, ",");
+
+            int regNameLen;
+            char* regName = (char*)getNextToken(parser, i, &regNameLen);
+
+            BLD_assemble(biteASM, "VAR2REG", 7);
+
+            int regIndex = BLD_getRegisterIndex(regName);
+            if(regIndex == -1 || regNameLen != 4)
+                CLI_logStatus(STATUS_FATAL, "unknown register '%.*s'", regNameLen, regName);
+
+            BLD_appendOpcodes(biteASM, varName, varNameLen);
+
+            int zero = 0;
+            BLD_appendInt(biteASM, &zero, 1);
+            BLD_appendInt(biteASM, &regIndex, 1);
+
+            tokenCheck(parser, i, ")");
+        } break;
+
+        case 15: {} break;  // if
+        case 16: {} break;  // else
+        case 17: {} break;  // for
+        case 18: {} break;  // while
+        case 19: {} break;  // break
+        case 20: {} break;  // continue
     }
 }
 
@@ -182,4 +214,18 @@ static _Bool memStrCmp(const void* mem, int memLen, const char* s){
     int sLen = strlen(s);
     if(sLen != memLen) return 0;
     return !memcmp(mem, s, sLen);
+}
+
+static int parseStringLiteral(const char* s, int len, char** o){
+    if((s[0] != '"' && s[0] != '`') || (s[len-1] != '"' && s[len-1] != '`'))
+        CLI_logStatus(STATUS_FATAL, "invalid string literal [%.*s]", len, s);
+    *o = s + 1;
+    return len-2;
+}
+
+static void tokenCheck(PARSER_CTX* parser, int* i, const char* s){
+    int tokenLen;
+    const char* token = getNextToken(parser, i, &tokenLen);
+    if(!memStrCmp(token, tokenLen, s))
+        CLI_logStatus(STATUS_FATAL, "%s expected", s);
 }

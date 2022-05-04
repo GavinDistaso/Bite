@@ -1,3 +1,15 @@
-func print(ptr string){
-    return string;
+func print_s(ptr s, uint32 len){
+    asm "PUSH NUM 0";
+
+    varToReg(s,     RA32);
+    asm "PUSH REG RA32";
+
+    varToReg(len,   RA32);
+    asm "PUSH REG RA32";
+
+    asm "INT 3"
+}
+
+func start(){
+    
 }

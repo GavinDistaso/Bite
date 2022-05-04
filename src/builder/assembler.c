@@ -17,7 +17,7 @@ void BLD_appendOpcodes(BAB_CTX* biteASM, const char* opcodes, int len){
     biteASM->opcodeLen += len;
 }
 
-static void appendInt(BAB_CTX* biteASM, void* x, int size){
+void BLD_appendInt(BAB_CTX* biteASM, void* x, int size){
     biteASM->opcodes = realloc(biteASM->opcodes, biteASM->opcodeLen + size);
     for(int i = 0; i < size; i++){
         biteASM->opcodes[biteASM->opcodeLen + i] = 
@@ -27,14 +27,15 @@ static void appendInt(BAB_CTX* biteASM, void* x, int size){
 }
 
 static inline char assembleToken(PARSER_CTX* parser, int i);
+int BLD_getRegisterIndex(const char* reg);
 
 #define tknStrCmp(str) !strncmp(parser->filedata + start, str, len)
 
-void BLD_assemble(BAB_CTX* biteASM, const char* asmCode){
+void BLD_assemble(BAB_CTX* biteASM, const char* asmCode, int len){
     PARSER_CTX parser;
-    parser.filedata = calloc(strlen(asmCode)+1, 1);
-    memcpy(parser.filedata, asmCode, strlen(asmCode));
-    parser.fileLength = strlen(asmCode);
+    parser.filedata = calloc(len+1, 1);
+    memcpy(parser.filedata, asmCode, len);
+    parser.fileLength = len;
 
     PRS_tokenize(&parser);
 
@@ -59,26 +60,15 @@ void BLD_assemble(BAB_CTX* biteASM, const char* asmCode){
                 memcpy(s, parser.filedata + start, len);
                 int v = atoi(s);
 
-                appendInt(biteASM, &v, sizeof(int));
+                BLD_appendInt(biteASM, &v, sizeof(int));
             }else{
                 char* tokStr = parser.filedata + start;
-                char type = tokStr[1];
-                char s[3]; memset(s, 0, 3);
-                memcpy(s, tokStr+2, 2);
+                
+                int regIndex = BLD_getRegisterIndex(tokStr);
 
-                int num     = atoi(s),
-                    offset  = (num == 64 ? 0 : (num == 32 ? 1 : (num == 16 ? 2 : 3)));
+                CLI_logStatus(STATUS_LOG, "%i", regIndex);
 
-                char base = offset;
-                if      (type == 'A') base += 10;
-                else if (type == 'S') base += 20;
-                else if (type == 'B') base += 30;
-                else if (type == 'D') base += 40;
-                else if (type == 'X') base += 50;
-    
-                CLI_logStatus(STATUS_LOG, "%i", base);
-
-                appendInt(biteASM, &base, sizeof(char));
+                BLD_appendInt(biteASM, &regIndex, sizeof(char));
             }
         }
     }
@@ -116,6 +106,9 @@ static inline char assembleToken(PARSER_CTX* parser, int i){
     else if (tknStrCmp("FUNC"))     return FUNC;
     else if (tknStrCmp("END"))      return END;
 
+    else if (tknStrCmp("LABEL"))    return LABEL;
+    else if (tknStrCmp("GOTO"))     return GOTO;
+
     else if (tknStrCmp("JME"))      return JME;
     else if (tknStrCmp("JML"))      return JML;
     else if (tknStrCmp("JMG"))      return JMG;
@@ -127,8 +120,7 @@ static inline char assembleToken(PARSER_CTX* parser, int i){
     else if (tknStrCmp("INT"))      return INT;
     else if (tknStrCmp("PUSH"))     return PUSH;
     else if (tknStrCmp("POP"))      return POP;
-    else if (tknStrCmp("MALLOC"))   return MALLOC;
-    else if (tknStrCmp("FREE"))     return FREE;
+    else if (tknStrCmp("VAR2REG"))  return VAR2REG;
     
     else if (tknStrCmp("REG"))      return REG;
     else if (tknStrCmp("NUM"))      return NUM;
@@ -139,4 +131,23 @@ static inline char assembleToken(PARSER_CTX* parser, int i){
     else CLI_logStatus(
             STATUS_FATAL, "Unknown instruction '%.*s'", 
             len, parser->filedata + start);
+}
+
+int BLD_getRegisterIndex(const char* reg){
+    char type = reg[1];
+    char s[3]; memset(s, 0, 3);
+    memcpy(s, reg+2, 2);
+
+    int num     = atoi(s),
+        offset  = (num == 64 ? 0 : (num == 32 ? 1 : (num == 16 ? 2 : 3)));
+
+    char base = offset;
+    if      (type == 'A') base += 10;
+    else if (type == 'S') base += 20;
+    else if (type == 'B') base += 30;
+    else if (type == 'D') base += 40;
+    else if (type == 'X') base += 50;
+    else return -1;
+
+    return base;
 }
